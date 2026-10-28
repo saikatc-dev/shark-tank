@@ -3,16 +3,21 @@
 Run:  streamlit run app.py
 Needs GROQ_API_KEY in the environment / .env (free Groq key).
 """
-import os
+from pathlib import Path
 
 import streamlit as st
 
 from panel import run_panel
 from sharks import SHARKS
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-with open(os.path.join(HERE, "sample_pitch.txt"), "r", encoding="utf-8") as f:
-    SAMPLE = f.read()
+HERE = Path(__file__).parent
+SAMPLE_PITCHES = [
+    ("TiffinAI", (HERE / "sample_pitch.txt").read_text(encoding="utf-8")),
+    *[
+        (path.stem, path.read_text(encoding="utf-8"))
+        for path in sorted((HERE / "sample_pitches").glob("*.txt"))
+    ],
+]
 
 st.set_page_config(page_title="Pitch to the AI Sharks", page_icon="🦈", layout="centered")
 st.title("🦈 Pitch to the AI Sharks")
@@ -23,7 +28,12 @@ with st.sidebar:
     for s in SHARKS:
         st.markdown(f"**{s.name}** — {s.title}")
 
-pitch = st.text_area("Your pitch", value=SAMPLE, height=240)
+sample_index = st.selectbox(
+    "Load a sample pitch",
+    range(len(SAMPLE_PITCHES)),
+    format_func=lambda index: SAMPLE_PITCHES[index][0],
+)
+pitch = st.text_area("Your pitch", value=SAMPLE_PITCHES[sample_index][1], height=240)
 
 if st.button("Face the Sharks 🦈", type="primary"):
     with st.spinner("The panel is deliberating…"):
