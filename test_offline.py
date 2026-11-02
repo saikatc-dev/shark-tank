@@ -13,12 +13,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def check(name, cond):
-    print(f"  {'✅' if cond else '❌'} {name}")
+    print(f"  {'✅' if cond else '❌'} {name}", flush=True)
     assert cond, f"FAILED: {name}"
 
 
 def main():
-    print("Offline tests — personas, schema, formatting")
+    print("Offline tests — personas, schema, formatting", flush=True)
 
     check("three sharks on the panel", len(SHARKS) == 3)
     check("sharks have distinct names", len({s.name for s in SHARKS}) == 3)
@@ -38,7 +38,7 @@ def main():
         pitch = f.read()
     check("sample pitch loads and is substantial", len(pitch) > 300 and "TiffinAI" in pitch)
 
-    print("\n✅ All offline tests passed.")
+    print("\n✅ All offline tests passed.", flush=True)
 
 
 if __name__ == "__main__":

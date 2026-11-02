@@ -3,6 +3,7 @@
 Run:  streamlit run app.py
 Needs GROQ_API_KEY in the environment / .env (free Groq key).
 """
+
 from pathlib import Path
 
 import streamlit as st
@@ -19,9 +20,13 @@ SAMPLE_PITCHES = [
     ],
 ]
 
-st.set_page_config(page_title="Pitch to the AI Sharks", page_icon="🦈", layout="centered")
+st.set_page_config(
+    page_title="Pitch to the AI Sharks", page_icon="🦈", layout="centered"
+)
 st.title("🦈 Pitch to the AI Sharks")
-st.caption("Pitch your startup to a panel of AI investors. They judge it, argue, and make offers.")
+st.caption(
+    "Pitch your startup to a panel of AI investors. They judge it, argue, and make offers."
+)
 
 with st.sidebar:
     st.subheader("The panel")
@@ -36,18 +41,23 @@ sample_index = st.selectbox(
 pitch = st.text_area("Your pitch", value=SAMPLE_PITCHES[sample_index][1], height=240)
 
 if st.button("Face the Sharks 🦈", type="primary"):
-    with st.spinner("The panel is deliberating…"):
-        result = run_panel(pitch)
+    try:
+        with st.spinner("The panel is deliberating…"):
+            result = run_panel(pitch)
+    except RuntimeError as exc:
+        st.error(str(exc))
+    else:
+        st.subheader("The verdicts")
+        for v in result["final"]:
+            invest = v.stance.upper().startswith("INVEST")
+            with st.container(border=True):
+                st.markdown(
+                    f"### {'💰' if invest else '🚫'} {v.shark} — {'INVEST' if invest else 'PASS'}"
+                )
+                if v.offer:
+                    st.markdown(f"**Offer:** {v.offer}")
+                st.write(v.reasoning)
 
-    st.subheader("The verdicts")
-    for v in result["final"]:
-        invest = v.stance.upper().startswith("INVEST")
-        with st.container(border=True):
-            st.markdown(f"### {'💰' if invest else '🚫'} {v.shark} — {'INVEST' if invest else 'PASS'}")
-            if v.offer:
-                st.markdown(f"**Offer:** {v.offer}")
-            st.write(v.reasoning)
-
-    st.divider()
-    st.markdown("### 🎤 The Host")
-    st.info(result["summary"])
+        st.divider()
+        st.markdown("### 🎤 The Host")
+        st.info(result["summary"])

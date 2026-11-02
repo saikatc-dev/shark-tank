@@ -9,12 +9,15 @@ Sharks return STRUCTURED verdicts via Groq's native structured outputs
 (method="json_schema", strict=True). The host writes a free-text wrap-up.
 Needs a free Groq API key as GROQ_API_KEY (see .env.example).
 """
+
 from __future__ import annotations
 
 import os
+import re
 from typing import List, TypedDict
 
 from dotenv import load_dotenv, find_dotenv
+from groq import GroqError, RateLimitError
 from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, END
 
@@ -55,20 +58,60 @@ def _format(verdicts: List[Verdict]) -> str:
 def _evaluate(shark, pitch: str, others: str = "") -> Verdict:
     prompt = (
         shark.system
-        + "\n\nYou are judging this startup pitch:\n\"\"\"\n" + pitch + "\n\"\"\"\n"
+        + '\n\nYou are judging this startup pitch:\n"""\n'
+        + pitch
+        + '\n"""\n'
     )
     if others:
-        prompt += ("\nThe other sharks have given their takes:\n" + others
-                   + "\n\nReact to them where you disagree, then give YOUR verdict.\n")
-    prompt += (f"\nRespond as {shark.name}. Decide INVEST or PASS, make an offer only if you "
-               "invest, and give your reasoning in your own voice.")
+        prompt += (
+            "\nThe other sharks have given their takes:\n"
+            + others
+            + "\n\nReact to them where you disagree, then give YOUR verdict.\n"
+        )
+    prompt += (
+        f"\nRespond as {shark.name}. Decide INVEST or PASS, make an offer only if you "
+        "invest, and give your reasoning in your own voice."
+    )
     # method="json_schema" + strict=True = Groq's native structured outputs with
     # constrained decoding, so a Verdict cannot come back malformed. Drop either
     # argument and this panel's 6 calls per run start failing intermittently
     # (tool_use_failed without the method, json_validate_failed without strict).
     # Strict mode only exists on openai/gpt-oss-* models.
-    verdict = _llm().with_structured_output(
-        Verdict, method="json_schema", strict=True).invoke(prompt)
+    try:
+        verdict = (
+            _llm()
+            .with_structured_output(Verdict, method="json_schema", strict=True)
+            .invoke(prompt)
+        )
+    except GroqError as exc:
+        if isinstance(exc, RateLimitError):
+            body = exc.body
+            if isinstance(body, dict):
+                details = body.get("error", body)
+                message = (
+                    details.get("message", "")
+                    if isinstance(details, dict)
+                    else ""
+                )
+            else:
+                message = ""
+            retry_match = re.search(
+                r"try again in\s+((?:\d+(?:\.\d+)?[hms])+(?:\s+\d+(?:\.\d+)?[hms])*)",
+                message,
+                flags=re.IGNORECASE,
+            )
+            retry_hint = (
+                f" Please wait {retry_match.group(1)} and try again."
+                if retry_match
+                else " Please wait a few minutes and try again."
+            )
+            raise RuntimeError(
+                f"Groq rate limit reached while evaluating {shark.name}."
+                f"{retry_hint}"
+            ) from exc
+        raise RuntimeError(
+            f"Groq failed to evaluate the pitch for {shark.name}: {exc}"
+        ) from exc
     verdict.shark = shark.name  # enforce correct attribution
     return verdict
 
@@ -80,16 +123,27 @@ def _panel(state: State) -> dict:
 def _debate(state: State) -> dict:
     # Each shark reacts to the OTHER sharks' round-1 takes — never its own, so it
     # isn't arguing with itself.
-    return {"final": [
-        _evaluate(s, state["pitch"], _format([v for v in state["round1"] if v.shark != s.name]))
-        for s in SHARKS
-    ]}
+    return {
+        "final": [
+            _evaluate(
+                s,
+                state["pitch"],
+                _format([v for v in state["round1"] if v.shark != s.name]),
+            )
+            for s in SHARKS
+        ]
+    }
 
 
 def _host(state: State) -> dict:
-    prompt = (HOST + "\n\nThe pitch:\n" + state["pitch"]
-              + "\n\nThe panel's final verdicts:\n" + _format(state["final"])
-              + "\n\nGive your wrap-up.")
+    prompt = (
+        HOST
+        + "\n\nThe pitch:\n"
+        + state["pitch"]
+        + "\n\nThe panel's final verdicts:\n"
+        + _format(state["final"])
+        + "\n\nGive your wrap-up."
+    )
     return {"summary": _llm(0.5).invoke(prompt).content}
 
 
