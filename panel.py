@@ -18,7 +18,8 @@ from typing import List, TypedDict
 
 from dotenv import load_dotenv, find_dotenv
 from groq import GroqError, RateLimitError
-from langchain_groq import ChatGroq
+from langchain.chat_models import init_chat_model
+from langchain_core.language_models import BaseChatModel
 from langgraph.graph import StateGraph, END
 
 from schema import Verdict
@@ -35,8 +36,13 @@ MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 # else on your key. langchain-groq defaults to 2 retries, which is not enough for
 # a long run; the Groq SDK honours the retry-after header, so raising this simply
 # waits out the window instead of failing the whole run.
-def _llm(temperature: float = 0.4) -> ChatGroq:
-    return ChatGroq(model=MODEL, temperature=temperature, max_retries=8)
+def _llm(temperature: float = 0.4) -> BaseChatModel:
+    return init_chat_model(
+        MODEL,
+        model_provider="groq",
+        temperature=temperature,
+        max_retries=8,
+    )
 
 
 class State(TypedDict):
