@@ -26,7 +26,6 @@ from sharks import SHARKS, HOST
 
 load_dotenv(find_dotenv(usecwd=True))
 
-# The same model as Weeks 1, 2 and 4 — one model across the whole course.
 MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 
@@ -89,9 +88,7 @@ def _evaluate(shark, pitch: str, others: str = "") -> Verdict:
             if isinstance(body, dict):
                 details = body.get("error", body)
                 message = (
-                    details.get("message", "")
-                    if isinstance(details, dict)
-                    else ""
+                    details.get("message", "") if isinstance(details, dict) else ""
                 )
             else:
                 message = ""

@@ -22,21 +22,21 @@ def load_pitch(args) -> str:
 
 def main() -> None:
     pitch = load_pitch(sys.argv[1:])
-    print("\n🦈  PITCH TO THE AI SHARKS", flush=True)
+    print("\nPITCH TO THE AI SHARKS", flush=True)
     print("=" * 60, flush=True)
-    print("The founder pitches… the panel deliberates…\n", flush=True)
+    print("The founder pitches... the panel deliberates...\n", flush=True)
 
     result = run_panel(pitch)
 
     for v in result["final"]:
-        badge = "💰 INVEST" if v.stance.upper().startswith("INVEST") else "🚫 PASS"
-        print(f"{badge} — {v.shark}", flush=True)
+        badge = "INVEST" if v.stance.upper().startswith("INVEST") else "PASS"
+        print(f"{badge} - {v.shark}", flush=True)
         if v.offer:
             print(f"   Offer: {v.offer}", flush=True)
         print(f"   {v.reasoning}\n", flush=True)
 
     print("-" * 60, flush=True)
-    print(f"🎤 HOST: {result['summary']}", flush=True)
+    print(f"HOST: {result['summary']}", flush=True)
 
 
 if __name__ == "__main__":

@@ -26,6 +26,7 @@ dist/
 !.env.example
 .streamlit/secrets.toml
 README-full.md
+sample_pitches/README-backup.md
 
 # Editor and operating-system files
 .vscode/
