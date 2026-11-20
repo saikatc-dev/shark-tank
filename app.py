@@ -12,11 +12,13 @@ from panel import run_panel
 from sharks import SHARKS
 
 HERE = Path(__file__).parent
+DEFAULT_SAMPLE_PITCH = HERE / "sample_pitches" / "sample_pitch.txt"
 SAMPLE_PITCHES = [
-    ("TiffinAI", (HERE / "sample_pitch.txt").read_text(encoding="utf-8")),
+    ("TiffinAI", DEFAULT_SAMPLE_PITCH.read_text(encoding="utf-8")),
     *[
         (path.stem, path.read_text(encoding="utf-8"))
         for path in sorted((HERE / "sample_pitches").glob("*.txt"))
+        if path != DEFAULT_SAMPLE_PITCH
     ],
 ]
 

@@ -15,7 +15,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 def load_pitch(args) -> str:
     files = [a for a in args if not a.startswith("-")]
-    path = files[0] if files else os.path.join(HERE, "sample_pitch.txt")
+    path = (
+        files[0]
+        if files
+        else os.path.join(HERE, "sample_pitches", "sample_pitch.txt")
+    )
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
 

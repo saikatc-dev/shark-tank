@@ -34,7 +34,9 @@ def main():
     check("_format lists every shark", "Nikhil" in text and "Veena" in text)
     check("_format shows offers", "Rs 4cr for 10%" in text)
 
-    with open(os.path.join(HERE, "sample_pitch.txt"), encoding="utf-8") as f:
+    with open(
+        os.path.join(HERE, "sample_pitches", "sample_pitch.txt"), encoding="utf-8"
+    ) as f:
         pitch = f.read()
     check("sample pitch loads and is substantial", len(pitch) > 300 and "TiffinAI" in pitch)
 
